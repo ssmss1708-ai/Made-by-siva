@@ -72,13 +72,22 @@
             color: white; cursor: pointer; font-size: 22px; box-shadow: var(--glow); transition: 0.3s;
         }
         .btn-music { background: var(--primary); }
-        .btn-mic { background: #4dabf7; } /* Blue for mic */
+        .btn-mic { background: #4dabf7; }
         .btn-mic.active { background: #ff922b; animation: pulse 1s infinite; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(255,146,43,0.7); } 100% { box-shadow: 0 0 0 15px rgba(255,146,43,0); } }
 
         .overlay { position: fixed; inset: 0; background: rgba(10, 5, 6, 0.95); z-index: 100; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .hidden { display: none !important; }
+
+        /* Result Popup */
+        #result-overlay {
+            background: rgba(0,0,0,0.85);
+            position: absolute; inset: 0; border-radius: 25px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 50;
+        }
+        #result-text { font-size: 1.5rem; margin-bottom: 20px; color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -100,7 +109,12 @@
             <button id="join-btn">Join Game & Voice</button>
         </div>
 
-        <div id="game-section" class="card hidden">
+        <div id="game-section" class="card hidden" style="position: relative;">
+            <div id="result-overlay" class="hidden">
+                <div id="result-text">Winner!</div>
+                <button id="next-game-btn" style="width: 80%;">Play Next Game 🎮</button>
+            </div>
+            
             <div class="status-bar">
                 <div id="display-room">Room: -</div>
                 <div id="turn-indicator">Connecting...</div>
@@ -110,7 +124,7 @@
                 <div class="cell" data-index="3"></div><div class="cell" data-index="4"></div><div class="cell" data-index="5"></div>
                 <div class="cell" data-index="6"></div><div class="cell" data-index="7"></div><div class="cell" data-index="8"></div>
             </div>
-            <button id="reset-btn" style="background:transparent; border:1px solid var(--primary)">Reset Game</button>
+            <button id="reset-btn" style="background:transparent; border:1px solid var(--primary)">Manual Reset</button>
         </div>
     </div>
 
@@ -145,6 +159,17 @@
         const micBtn = document.getElementById('mic-btn');
         const musicBtn = document.getElementById('music-btn');
         const bgMusic = document.getElementById('bg-music');
+        const resultOverlay = document.getElementById('result-overlay');
+        const resultText = document.getElementById('result-text');
+
+        // VOICE CONFIG (Noise Reduction)
+        const voiceConstraints = {
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        };
 
         // JOIN LOGIC
         document.getElementById('join-btn').addEventListener('click', async () => {
@@ -155,7 +180,6 @@
             roomId = rId;
             document.getElementById('loading-screen').classList.remove('hidden');
 
-            // Initialize Peer for Mic
             initVoiceChat(pName);
 
             const roomRef = ref(db, `rooms/${roomId}`);
@@ -191,8 +215,16 @@
                 
                 if (data.winner) {
                     gameActive = false;
-                    alert(data.winner === 'draw' ? "Game Draw!" : (data.winner === mySymbol ? "You Won! 💕" : "Partner Won! 💖"));
-                    location.reload();
+                    resultOverlay.classList.remove('hidden');
+                    if(data.winner === 'draw') {
+                        resultText.innerText = "It's a Draw! 🤝";
+                    } else {
+                        resultText.innerText = data.winner === mySymbol ? "You Won! 💕" : "Partner Won! 💖";
+                    }
+                } else {
+                    // Game is ongoing or reset
+                    gameActive = true;
+                    resultOverlay.classList.add('hidden');
                 }
                 document.getElementById('loading-screen').classList.add('hidden');
             });
@@ -223,55 +255,55 @@
             });
         });
 
+        // NEXT GAME BUTTON
+        document.getElementById('next-game-btn').addEventListener('click', () => {
+            update(ref(db, `rooms/${roomId}`), { board: Array(9).fill(""), winner: "", turn: "❤️" });
+        });
+
         // VOICE CHAT (MIC) LOGIC
         async function initVoiceChat(pName) {
-            peer = new Peer(roomId + "_" + pName); // Fixed Peer ID based on Room + Name
+            peer = new Peer(roomId + "_" + pName);
 
-            peer.on('open', (id) => {
-                console.log('Peer ID:', id);
-            });
-
-            // Listen for incoming calls
             peer.on('call', (call) => {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+                navigator.mediaDevices.getUserMedia(voiceConstraints).then((stream) => {
                     call.answer(stream);
-                    call.on('stream', (remoteStream) => {
-                        playRemoteStream(remoteStream);
-                    });
+                    call.on('stream', (remoteStream) => playRemoteStream(remoteStream));
                 });
             });
 
             micBtn.addEventListener('click', async () => {
                 if (!localStream) {
                     try {
-                        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        localStream = await navigator.mediaDevices.getUserMedia(voiceConstraints);
                         micBtn.classList.add('active');
-                        // Call the other player
                         const otherPlayer = mySymbol === '❤️' ? 'p2' : 'p1';
                         const roomSnap = await get(ref(db, `rooms/${roomId}`));
                         const otherName = roomSnap.val()[otherPlayer + "_peer"];
                         
                         if (otherName) {
                             const call = peer.call(roomId + "_" + otherName, localStream);
-                            call.on('stream', (remoteStream) => {
-                                playRemoteStream(remoteStream);
-                            });
+                            call.on('stream', (remoteStream) => playRemoteStream(remoteStream));
                         }
                     } catch (err) {
                         alert("Mic access denied!");
                     }
                 } else {
-                    localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
-                    micBtn.classList.toggle('active');
+                    const enabled = localStream.getAudioTracks()[0].enabled;
+                    localStream.getAudioTracks()[0].enabled = !enabled;
+                    micBtn.classList.toggle('active', !enabled);
                 }
             });
         }
 
         function playRemoteStream(stream) {
-            const audio = document.createElement('audio');
+            let audio = document.getElementById('remote-audio-el');
+            if(!audio) {
+                audio = document.createElement('audio');
+                audio.id = 'remote-audio-el';
+                document.getElementById('remote-audio-container').appendChild(audio);
+            }
             audio.srcObject = stream;
             audio.play();
-            document.getElementById('remote-audio-container').appendChild(audio);
         }
 
         // UI Extras
