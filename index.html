@@ -3,334 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realtime Love ❤️ - let's play</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>Ludo made by sivasingh🤌</title>
     <style>
         :root {
-            --primary: #ff4d6d;
-            --secondary: #ffb3c1;
-            --glow: 0 0 20px rgba(255, 77, 109, 0.7);
+            --red: #ff4d6d;
+            --blue: #4dabf7;
+            --bg: #0a0506;
+            --white: #fff0f3;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
 
-        body {
-            background: radial-gradient(circle at center, #2b0d12 0%, #0a0506 100%);
-            color: white; min-height: 100vh; overflow: hidden;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        .header { margin: 15px; text-align: center; }
+        h1 { color: var(--red); text-shadow: 0 0 10px rgba(255,77,109,0.5); font-size: 1.5rem; }
+
+        /* LUDO BOARD CSS */
+        .ludo-container {
+            width: 360px; height: 360px; background: white;
+            display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
+            border: 4px solid #333; box-shadow: 0 0 30px rgba(255, 77, 109, 0.3);
+            position: relative;
         }
 
-        .top-credit { 
-            position: fixed; top: 0; left: 0; width: 100%; 
-            font-size: 1.1rem; color: #fff; z-index: 1000; 
-            background: linear-gradient(90deg, #ff4d6d, #ff00ff, #ff4d6d);
-            padding: 8px; font-weight: bold; text-align: center;
-            text-shadow: 0 0 10px white; animation: glow-text 2s infinite linear;
+        .cell { border: 0.1px solid #ddd; background: white; display: flex; align-items: center; justify-content: center; position: relative; }
+
+        /* Zones */
+        .red-home { grid-column: 1/7; grid-row: 1/7; background: var(--red); }
+        .blue-home { grid-column: 10/16; grid-row: 1/7; background: var(--blue); }
+        .white-center { grid-column: 7/10; grid-row: 7/10; background: #eee; font-size: 10px; text-align: center; }
+
+        /* Paths Color */
+        .red-path { background: #ffccd5; }
+        .blue-path { background: #d0ebff; }
+        .safe-spot { background: #ffd166 !important; } /* Star Spot */
+
+        /* Token Styles */
+        .token {
+            width: 18px; height: 18px; border-radius: 50%; border: 2px solid white;
+            cursor: pointer; z-index: 10; position: absolute; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }
-        @keyframes glow-text { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        .token-red { background: var(--red); }
+        .token-blue { background: var(--blue); }
 
-        /* Corner Music Icons */
-        .music-corner { 
-            position: fixed; width: 45px; height: 45px; background: var(--primary); 
-            color: white; border-radius: 50%; display: flex; justify-content: center; 
-            align-items: center; cursor: pointer; z-index: 1500; font-size: 20px; 
-            box-shadow: var(--glow); animation: pulse 2s infinite;
+        /* UI Controls */
+        .controls { margin-top: 20px; width: 360px; display: flex; justify-content: space-around; align-items: center; }
+        .dice {
+            width: 60px; height: 60px; background: white; border-radius: 12px; color: black;
+            display: flex; align-items: center; justify-content: center; font-size: 2rem;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(255,255,255,0.2);
         }
-        .m-tl { top: 60px; left: 15px; }
-        .m-tr { top: 60px; right: 15px; }
-        .m-bl { bottom: 20px; left: 15px; }
-        .m-br { bottom: 20px; right: 15px; }
+        .btn { background: var(--red); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        
+        .status { margin-top: 10px; font-size: 0.9rem; color: #ffb3c1; }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-        .container { z-index: 10; width: 95%; max-width: 400px; text-align: center; margin-top: 40px; }
-        .card {
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
-            padding: 20px; border-radius: 25px; border: 1px solid rgba(255, 77, 109, 0.3);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-        }
-
-        input {
-            width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 12px;
-            border: 1px solid rgba(255, 77, 109, 0.3); background: rgba(255,255,255,0.1);
-            color: white; text-align: center; outline: none;
-        }
-
-        button {
-            background: var(--primary); color: white; border: none; padding: 12px;
-            border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s;
-        }
-
-        .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
-        .cell {
-            aspect-ratio: 1; background: rgba(255,255,255,0.07); border-radius: 15px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 2.5rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
-        }
-
-        .gift-bar { display: flex; justify-content: space-around; margin: 10px 0; gap: 5px; }
-        .gift-btn { background: rgba(255,255,255,0.1); font-size: 1.5rem; padding: 5px; border-radius: 10px; width: auto; border: 1px solid var(--secondary); }
-
-        .chat-box { height: 100px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; margin: 10px 0; font-size: 0.85rem; text-align: left; }
-        .chat-msg { margin-bottom: 5px; padding: 4px 8px; border-radius: 5px; width: fit-content; max-width: 80%; }
-        .msg-me { background: #ff4d6d; color: white; align-self: flex-end; margin-left: auto; }
-        .msg-them { background: #4dabf7; color: white; }
-
-        .music-menu { 
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: rgba(0,0,0,0.95); padding: 20px; border-radius: 15px; 
-            display: none; flex-direction: column; gap: 10px; border: 2px solid var(--primary); z-index: 3000; 
-        }
-
-        #gift-layer { position: fixed; inset: 0; pointer-events: none; z-index: 5000; display: flex; justify-content: center; align-items: center; }
-        .gift-blast { font-size: 180px; animation: blast 1.2s ease-out forwards; }
-        @keyframes blast { 
-            0% { transform: scale(0) rotate(0deg); opacity: 0; }
-            50% { transform: scale(1.5) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 30px #ff4d6d); }
-            100% { transform: scale(2.5) rotate(-15deg); opacity: 0; }
-        }
-
-        .mic-fab { position: fixed; bottom: 80px; width: 55px; height: 55px; border-radius: 50%; background: #4dabf7; border: none; color: white; cursor: pointer; font-size: 22px; box-shadow: var(--glow); z-index: 1000; }
-        .mic-fab.active { background: #ff922b; animation: pulse 1s infinite; }
-
-        .overlay { position: fixed; inset: 0; background: rgba(10, 5, 6, 0.95); z-index: 100; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        /* Overlay */
+        .setup-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        input { padding: 12px; border-radius: 10px; border: none; width: 250px; }
+        
         .hidden { display: none !important; }
-        #result-overlay { position: absolute; inset: 0; border-radius: 25px; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        .rolling { animation: spin 0.2s infinite; }
+        @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="top-credit">Made by - @smss1708</div>
-
-    <div class="music-corner m-tl" onclick="toggleMenu()">🎵</div>
-    <div class="music-corner m-tr" onclick="toggleMenu()">🎵</div>
-    <div class="music-corner m-bl" onclick="toggleMenu()">🎵</div>
-    <div class="music-corner m-br" onclick="toggleMenu()">🎵</div>
-
-    <div id="loading-screen" class="overlay hidden"><p>Connecting...</p></div>
-    <div id="gift-layer"></div>
-
-    <div class="container">
-        <h1 style="color: var(--primary); text-shadow: var(--glow); margin-bottom: 10px;">Realtime Love ❤️</h1>
-        
-        <div id="setup-section" class="card">
-            <input type="text" id="room-id" placeholder="Room Code">
-            <input type="text" id="player-name" placeholder="Your Name">
-            <button id="join-btn">Start Love Session</button>
-        </div>
-
-        <div id="game-section" class="card hidden" style="position: relative;">
-            <div id="result-overlay" class="hidden">
-                <div id="result-text" style="font-size: 1.5rem; margin-bottom: 10px;">Winner!</div>
-                <button id="next-game-btn" style="width: 80%;">Play Again 🎮</button>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--secondary); margin-bottom: 10px;">
-                <div id="display-room">Room: -</div>
-                <div id="turn-indicator">Waiting...</div>
-            </div>
-
-            <div class="board" id="board">
-                <div class="cell" data-index="0"></div><div class="cell" data-index="1"></div><div class="cell" data-index="2"></div>
-                <div class="cell" data-index="3"></div><div class="cell" data-index="4"></div><div class="cell" data-index="5"></div>
-                <div class="cell" data-index="6"></div><div class="cell" data-index="7"></div><div class="cell" data-index="8"></div>
-            </div>
-
-            <div class="gift-bar">
-                <button class="gift-btn" onclick="sendGift('❤️')">❤️</button>
-                <button class="gift-btn" onclick="sendGift('🌹')">🌹</button>
-                <button class="gift-btn" onclick="sendGift('😘')">😘</button>
-                <button class="gift-btn" onclick="sendGift('🍫')">🍫</button>
-            </div>
-
-            <div class="chat-box" id="chat-box"></div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="chat-input" placeholder="Say something..." style="margin:0; flex:1;">
-                <button id="send-chat" style="width:50px;">🚀</button>
-            </div>
-        </div>
+    <div id="setup" class="setup-screen">
+        <h1>Made by - sivasingh❤️</h1>
+        <input type="text" id="room-id" placeholder="Create/Enter Room Code">
+        <input type="text" id="player-name" placeholder="Your Name">
+        <button id="join-btn" class="btn">Connect Heart to Heart</button>
     </div>
 
-    <div class="music-menu" id="music-menu">
-        <button onclick="playSong('love.mp3')">🎵 Love</button>
-        <button onclick="playSong('love1.mp3')">🎵 Love 1</button>
-        <button onclick="playSong('sad.mp3')">🎵 Sad</button>
-        <button onclick="playSong('tere-liye.mp3')">🎵 Tere Liye</button>
-        <button onclick="stopSong()" style="background:#444; margin-top:5px;">⏹️ Stop</button>
-        <button onclick="toggleMenu()" style="background:none; border:1px solid #fff; margin-top:5px;">Close</button>
+    <div class="header">
+        <h1>Modder - @snss1708 ❤️</h1>
+        <div id="turn-info">Waiting for partner...</div>
     </div>
 
-    <button id="mic-btn" class="mic-fab">🎤</button>
+    <div class="ludo-container" id="board">
+        </div>
 
-    <audio id="bg-music" loop></audio>
-    <div id="remote-audio-container"></div>
+    <div class="controls">
+        <div id="dice" class="dice">🎲</div>
+        <button id="roll-btn" class="btn">Roll Dice</button>
+    </div>
+    
+    <div class="status" id="status-msg">Roll to start!</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // Firebase Config (Using your project)
         const firebaseConfig = {
             apiKey: "AIzaSyCB-631vxXfLP-Cnnc3jTf7zz_kha8g8qk",
             authDomain: "tic-tac-9253e.firebaseapp.com",
             databaseURL: "https://tic-tac-9253e-default-rtdb.firebaseio.com",
-            projectId: "tic-tac-9253e",
-            storageBucket: "tic-tac-9253e.firebasestorage.app",
-            messagingSenderId: "354573092432",
-            appId: "1:354573092432:web:d8f8672b220a80b6fe3355"
+            projectId: "tic-tac-9253e"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let roomId, myName, mySymbol, isMyTurn = false, gameActive = true, peer, localStream;
 
-        const micBtn = document.getElementById('mic-btn');
-        const bgMusic = document.getElementById('bg-music');
+        let roomId, myPlayerId, isMyTurn = false;
+        const boardEl = document.getElementById('board');
+
+        // LUDO MAP (Simplified for Web)
+        function createBoard() {
+            for (let i = 0; i < 225; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `c-${i}`;
+                // Basic coloring logic for Ludo shape
+                let row = Math.floor(i / 15);
+                let col = i % 15;
+                
+                if (row < 6 && col < 6) cell.classList.add('red-home');
+                if (row < 6 && col > 8) cell.classList.add('blue-home');
+                if (row > 6 && row < 8 && col < 6) cell.classList.add('red-path');
+                if (row < 6 && col === 7) cell.classList.add('blue-path');
+                if (row === 7 && col === 7) cell.innerHTML = "❤️";
+                
+                boardEl.appendChild(cell);
+            }
+        }
+        createBoard();
 
         document.getElementById('join-btn').addEventListener('click', async () => {
-            const rId = document.getElementById('room-id').value.trim();
-            const pName = document.getElementById('player-name').value.trim();
-            if (!rId || !pName) return alert("Fill all details");
+            roomId = document.getElementById('room-id').value.trim();
+            if (!roomId) return alert("Enter Room!");
 
-            roomId = rId; myName = pName;
-            document.getElementById('loading-screen').classList.remove('hidden');
+            const roomRef = ref(db, `ludo_pro/${roomId}`);
+            const snap = await get(roomRef);
 
-            setupVoice(pName);
-
-            const roomRef = ref(db, `rooms/${roomId}`);
-            const snapshot = await get(roomRef);
-
-            if (!snapshot.exists()) {
-                mySymbol = '💕';
-                await set(roomRef, { board: Array(9).fill(""), turn: '💕', winner: "", p1: pName, p1_peer: pName });
+            if (!snap.exists()) {
+                myPlayerId = 'red';
+                await set(roomRef, {
+                    turn: 'red',
+                    diceValue: 1,
+                    redPos: [0, 0, 0, 0], // 0 means inside base
+                    bluePos: [0, 0, 0, 0]
+                });
             } else {
-                mySymbol = '💖';
-                await update(roomRef, { p2: pName, p2_peer: pName });
+                myPlayerId = 'blue';
             }
 
-            document.getElementById('display-room').innerText = "Room: " + roomId;
-            document.getElementById('setup-section').classList.add('hidden');
-            document.getElementById('game-section').classList.remove('hidden');
-            sync();
+            document.getElementById('setup').classList.add('hidden');
+            startSync();
         });
 
-        function sync() {
-            onValue(ref(db, `rooms/${roomId}`), (snap) => {
+        function startSync() {
+            onValue(ref(db, `ludo_pro/${roomId}`), (snap) => {
                 const data = snap.val();
                 if (!data) return;
-                data.board.forEach((val, i) => document.querySelector(`.cell[data-index="${i}"]`).innerText = val);
-                isMyTurn = (data.turn === mySymbol);
-                document.getElementById('turn-indicator').innerText = isMyTurn ? "Your Turn!" : "Partner's Turn...";
+
+                isMyTurn = data.turn === myPlayerId;
+                document.getElementById('turn-info').innerText = isMyTurn ? "Your Turn Baby! 😘" : "Waiting for partner... ❤️";
+                document.getElementById('dice').innerText = data.diceValue;
+
+                // Render Tokens
+                updateTokens(data);
+            });
+        }
+
+        function updateTokens(data) {
+            document.querySelectorAll('.token').forEach(t => t.remove());
+            // Render Red Tokens
+            data.redPos.forEach((pos, i) => {
+                const cellId = pos === 0 ? `c-${32 + i}` : `c-${pos}`;
+                addTokenToCell(cellId, 'red', i);
+            });
+            // Render Blue Tokens
+            data.bluePos.forEach((pos, i) => {
+                const cellId = pos === 0 ? `c-${40 + i}` : `c-${pos}`;
+                addTokenToCell(cellId, 'blue', i);
+            });
+        }
+
+        function addTokenToCell(cellId, color, index) {
+            const cell = document.getElementById(cellId);
+            if (!cell) return;
+            const token = document.createElement('div');
+            token.className = `token token-${color}`;
+            token.onclick = () => moveToken(index);
+            cell.appendChild(token);
+        }
+
+        document.getElementById('roll-btn').addEventListener('click', async () => {
+            if (!isMyTurn) return;
+            const dice = document.getElementById('dice');
+            dice.classList.add('rolling');
+
+            setTimeout(async () => {
+                dice.classList.remove('rolling');
+                const val = Math.floor(Math.random() * 6) + 1;
                 
-                if (data.winner) {
-                    gameActive = false;
-                    document.getElementById('result-overlay').classList.remove('hidden');
-                    document.getElementById('result-text').innerText = data.winner === 'draw' ? "Draw! 🤝" : (data.winner === mySymbol ? "You Won! 💕" : "Partner Won! 💖");
-                } else {
-                    gameActive = true;
-                    document.getElementById('result-overlay').classList.add('hidden');
+                await update(ref(db, `ludo_pro/${roomId}`), {
+                    diceValue: val,
+                    // Auto switch turn if no move possible (simplified logic)
+                    turn: val === 6 ? myPlayerId : (myPlayerId === 'red' ? 'blue' : 'red')
+                });
+                
+                if(val === 6) {
+                    document.getElementById('status-msg').innerText = "WOW! 6! Nikalo token ❤️";
                 }
-                document.getElementById('loading-screen').classList.add('hidden');
-            });
-
-            onValue(ref(db, `rooms/${roomId}/gift`), (snap) => {
-                const gift = snap.val();
-                if(gift && gift.sender !== myName) showBlast(gift.emoji);
-            });
-
-            onValue(ref(db, `rooms/${roomId}/chats`), (snap) => {
-                const box = document.getElementById('chat-box');
-                box.innerHTML = '';
-                snap.forEach(c => {
-                    const m = c.val();
-                    box.innerHTML += `<div class="chat-msg ${m.sender === myName ? 'msg-me' : 'msg-them'}">${m.text}</div>`;
-                });
-                box.scrollTop = box.scrollHeight;
-            });
-        }
-
-        document.querySelectorAll('.cell').forEach(c => {
-            c.addEventListener('click', async () => {
-                if (!isMyTurn || c.innerText !== "" || !gameActive) return;
-                const roomSnap = await get(ref(db, `rooms/${roomId}`));
-                const board = roomSnap.val().board;
-                board[c.dataset.index] = mySymbol;
-
-                const winP = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-                let winner = null;
-                for (let p of winP) if (board[p[0]] && board[p[0]] === board[p[1]] && board[p[0]] === board[p[2]]) winner = board[p[0]];
-                const isDraw = !board.includes("") && !winner;
-
-                await update(ref(db, `rooms/${roomId}`), {
-                    board: board, turn: mySymbol === '💕' ? '💖' : '💕',
-                    winner: winner || (isDraw ? 'draw' : "")
-                });
-            });
+            }, 400);
         });
 
-        document.getElementById('send-chat').addEventListener('click', () => {
-            const input = document.getElementById('chat-input');
-            if(input.value.trim()) push(ref(db, `rooms/${roomId}/chats`), { sender: myName, text: input.value });
-            input.value = '';
-        });
-
-        window.sendGift = (emoji) => {
-            update(ref(db, `rooms/${roomId}/gift`), { sender: myName, emoji: emoji, time: Date.now() });
-            showBlast(emoji);
-        };
-
-        function showBlast(emoji) {
-            const el = document.createElement('div');
-            el.className = 'gift-blast';
-            el.innerText = emoji;
-            document.getElementById('gift-layer').appendChild(el);
-            setTimeout(() => el.remove(), 1200);
+        async function moveToken(index) {
+            if (!isMyTurn) return;
+            // Yahan par aap token ko aage badhane ka logic (Path mapping) daal sakte hain
+            // Filhal simplicity ke liye hum click par base se nikalne ka logic rakhte hain
+            document.getElementById('status-msg').innerText = "Moving token... 🚀";
         }
 
-        window.toggleMenu = () => {
-            const m = document.getElementById('music-menu');
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
-        };
-
-        window.playSong = (src) => {
-            bgMusic.src = src;
-            bgMusic.play();
-            toggleMenu();
-        };
-
-        window.stopSong = () => { bgMusic.pause(); toggleMenu(); };
-
-        document.getElementById('next-game-btn').addEventListener('click', () => {
-            update(ref(db, `rooms/${roomId}`), { board: Array(9).fill(""), winner: "", turn: "💕" });
-        });
-
-        async function setupVoice(pName) {
-            peer = new Peer(roomId + "_" + pName);
-            peer.on('call', (call) => {
-                navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }).then((s) => {
-                    call.answer(s);
-                    call.on('stream', (rs) => {
-                        let a = document.getElementById('remote-audio-el') || document.createElement('audio');
-                        a.id = 'remote-audio-el'; a.srcObject = rs; a.play();
-                        document.getElementById('remote-audio-container').appendChild(a);
-                    });
-                });
-            });
-
-            micBtn.addEventListener('click', async () => {
-                if (!localStream) {
-                    localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-                    micBtn.classList.add('active');
-                    const other = mySymbol === '💕' ? 'p2' : 'p1';
-                    const snap = await get(ref(db, `rooms/${roomId}`));
-                    const target = snap.val()[other + "_peer"];
-                    if (target) peer.call(roomId + "_" + target, localStream);
-                } else {
-                    const en = localStream.getAudioTracks()[0].enabled;
-                    localStream.getAudioTracks()[0].enabled = !en;
-                    micBtn.classList.toggle('active', !en);
-                }
-            });
-        }
     </script>
 </body>
 </html>
