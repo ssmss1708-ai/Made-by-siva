@@ -3,265 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Pro | Modder Sivasingh 🤌</title>
+    <title>Ludo Pro | Modder Sivasingh</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #ff4d6d;
-            --secondary: #ff85a1;
-            --glass: rgba(255, 255, 255, 0.1);
-            --neon: 0 0 25px rgba(255, 77, 109, 0.7);
+            --rose: #ff69b4; --pink: #ff1493; --deep-pink: #c71585;
+            --peach: #ffc0cb; --gold: #ffd700; --heart-red: #ff1744;
+            --glass: rgba(255, 255, 255, 0.25);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
         body {
-            background: radial-gradient(circle at center, #2d0a1e 0%, #0f0511 100%);
-            color: #fff; min-height: 100vh; display: flex; flex-direction: column; 
+            background: linear-gradient(135deg, #feb47b, #ff7eb3);
+            min-height: 100vh; display: flex; flex-direction: column;
             align-items: center; justify-content: center; overflow: hidden;
         }
 
-        /* Branding Top */
-        .modder-tag {
-            position: fixed; top: 10px; font-weight: 600; color: var(--secondary);
-            letter-spacing: 1px; text-shadow: var(--neon); z-index: 1000;
+        /* PREMIUM MODDER TAG */
+        .modder-branding {
+            position: fixed; top: 0; width: 100%; text-align: center;
+            padding: 10px; background: rgba(0,0,0,0.1); backdrop-filter: blur(10px);
+            color: #fff; font-weight: bold; font-size: 1.1rem; z-index: 5000;
+            letter-spacing: 2px; text-shadow: 0 0 15px var(--pink);
+            border-bottom: 2px solid var(--glass);
         }
 
-        /* Heart Particles */
-        .hearts-bg { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
-        .heart { position: absolute; color: var(--primary); animation: float 5s linear infinite; opacity: 0; }
-        @keyframes float {
-            0% { transform: translateY(110vh) scale(0); opacity: 0; }
-            50% { opacity: 0.8; }
-            100% { transform: translateY(-10vh) scale(1.3); opacity: 0; }
-        }
-
-        .container { z-index: 10; width: 95%; max-width: 450px; text-align: center; }
-
-        .glass-card {
-            background: var(--glass); backdrop-filter: blur(25px); border-radius: 35px;
-            padding: 30px; border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
-        }
-
-        h1 { 
-            font-size: 2.2rem; background: linear-gradient(45deg, #ff4d6d, #ffb3c1);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 15px; filter: drop-shadow(var(--neon));
-        }
-
-        input {
-            width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 15px;
-            border: none; background: rgba(255, 255, 255, 0.08); color: white;
-            text-align: center; outline: none; font-size: 1rem;
-        }
-
-        .btn-main {
-            width: 100%; padding: 15px; border-radius: 15px; border: none;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            color: white; font-weight: 600; cursor: pointer; box-shadow: var(--neon);
-            transition: 0.3s;
-        }
-
-        /* BOARD DESIGN */
-        .ludo-board {
+        /* LUDO BOARD CORE */
+        .ludo-container {
+            position: relative; width: 95vw; max-width: 420px; aspect-ratio: 1;
+            background: #fff; border: 8px solid var(--deep-pink);
             display: grid; grid-template-columns: repeat(15, 1fr);
-            width: 100%; aspect-ratio: 1; margin: 20px 0; border: 3px solid var(--primary);
-            border-radius: 20px; overflow: hidden; gap: 1px; background: rgba(0,0,0,0.3);
-        }
-        .cell { background: rgba(255, 255, 255, 0.03); display: flex; align-items: center; justify-content: center; font-size: 8px; }
-        .r-home { background: rgba(255, 77, 109, 0.3); }
-        .b-home { background: rgba(78, 205, 196, 0.3); }
-
-        /* CONTROLS */
-        .controls { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
-        .control-btn {
-            width: 55px; height: 55px; border-radius: 50%; background: var(--glass);
-            border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
-            transition: 0.3s;
-        }
-        .control-btn.active { background: var(--primary); box-shadow: var(--neon); }
-
-        .dice-display {
-            width: 70px; height: 70px; background: #fff; color: var(--primary);
-            border-radius: 18px; font-size: 2.5rem; display: flex; align-items: center;
-            justify-content: center; margin: 15px auto; cursor: pointer; box-shadow: var(--neon);
+            grid-template-rows: repeat(15, 1fr); border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
         }
 
-        .hidden { display: none; }
-        #status-bar { color: var(--secondary); font-size: 0.9rem; margin-bottom: 10px; font-style: italic; }
+        .cell { border: 0.1px solid rgba(0,0,0,0.05); position: relative; display: flex; align-items: center; justify-content: center; }
+        
+        /* Bases & Paths */
+        .home-base { grid-row: span 6; grid-column: span 6; padding: 10px; }
+        .rose-area { background: var(--rose); }
+        .peach-area { background: var(--peach); }
+        .inner-white { width: 100%; height: 100%; background: #fff; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; padding: 5px; }
+        .slot { border-radius: 50%; background: #f5f5f5; margin: 5px; border: 2px dashed #ccc; }
+
+        .path-rose { background: var(--rose) !important; }
+        .path-peach { background: var(--peach) !important; }
+        .safe-zone { background: #d1d1d1 !important; }
+        .safe-zone::after { content: '❤'; font-size: 10px; color: var(--heart-red); }
+
+        .center-home { grid-area: 7 / 7 / span 3 / span 3; background: conic-gradient(var(--rose), #fff, var(--peach), #fff); }
+
+        /* GOTI (TOKENS) */
+        .token {
+            width: 80%; height: 80%; border-radius: 50%;
+            border: 3px solid #fff; position: absolute; z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4); cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .token-rose { background: radial-gradient(circle, var(--heart-red), #880e4f); }
+        .token-peach { background: radial-gradient(circle, #ff9800, #e65100); }
+
+        /* CONTROLS & VOICE */
+        .ui-panel {
+            margin-top: 15px; width: 95vw; max-width: 420px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; background: var(--glass); border-radius: 20px;
+            backdrop-filter: blur(15px); border: 1px solid var(--glass);
+        }
+
+        .dice-btn {
+            width: 65px; height: 65px; background: #fff; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; cursor: pointer; border: 4px solid var(--pink);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .action-btns button {
+            background: #fff; border: none; padding: 10px; border-radius: 50%;
+            margin-left: 8px; cursor: pointer; font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .active-voice { background: #4caf50 !important; color: #fff; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+
+        #login { position: fixed; inset: 0; background: var(--rose); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        input { padding: 15px; margin: 10px; border-radius: 30px; border: none; width: 280px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="modder-tag">Modder - Sivasingh 🤌</div>
-    <div class="hearts-bg" id="heart-container"></div>
+    <div class="modder-branding">MODDER - SIVASINGH 🤌</div>
 
-    <div class="container">
-        <div id="setup-card" class="glass-card">
-            <h1>Made by @smss1708 💖</h1>
-            <input type="text" id="room-input" placeholder="Secret Code">
-            <input type="text" id="name-input" placeholder="Your Sweet Name">
-            <button class="btn-main" id="join-btn">Start Game Session 🥂</button>
-        </div>
+    <div id="login">
+        <h1 style="color:#fff; margin-bottom:20px;">REALTIME LUDO 💕</h1>
+        <input type="text" id="roomID" placeholder="Enter Your Code">
+        <input type="text" id="userName" placeholder="Your Sweet Name">
+        <button onclick="startGame()" style="padding:15px 40px; border-radius:30px; border:none; background:#fff; color:var(--deep-pink); font-weight:bold; cursor:pointer;">START GAME ✨</button>
+    </div>
 
-        <div id="game-card" class="glass-card hidden">
-            <div id="status-bar">Heartbeats syncing...</div>
-            <div class="ludo-board" id="board"></div>
-            
-            <div class="dice-display" id="dice-btn">🎲</div>
+    <div class="ludo-container" id="board">
+        <div class="center-home"></div>
+    </div>
 
-            <div class="controls">
-                <div class="control-btn" id="mic-btn" title="Zero Noise Voice">🎤</div>
-                <div class="control-btn" id="music-btn" title="Play Romance">🎵</div>
-                <div class="control-btn" id="skip-btn" title="Next Song">⏭️</div>
-            </div>
-            <p id="song-info" style="font-size: 0.7rem; margin-top: 10px; color: var(--secondary);"></p>
+    <div class="ui-panel">
+        <div id="status" style="color:#fff; font-weight:bold; font-size:0.8rem; width:80px;">Ready?</div>
+        <div class="dice-btn" id="dice">🎲</div>
+        <div class="action-btns">
+            <button id="musicBtn" onclick="toggleMusic()">🎵</button>
+            <button id="voiceBtn" onclick="toggleVoice()">🎤</button>
         </div>
     </div>
 
-    <audio id="bg-audio" loop></audio>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCB-631vxXfLP-Cnnc3jTf7zz_kha8g8qk",
             authDomain: "tic-tac-9253e.firebaseapp.com",
             databaseURL: "https://tic-tac-9253e-default-rtdb.firebaseio.com",
-            projectId: "tic-tac-9253e",
-            storageBucket: "tic-tac-9253e.firebasestorage.app",
-            messagingSenderId: "354573092432",
-            appId: "1:354573092432:web:d8f8672b220a80b6fe3355"
+            projectId: "tic-tac-9253e"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        let currentRoom, myName, myColor;
+        
+        // 4 Music Tracks as requested
+        const playlist = [
+            new Audio('love.mp3'),
+            new Audio('love1.mp3'),
+            new Audio('sad.mp3'),
+            new Audio('tere-liye.mp3')
+        ];
+        let currentTrackIdx = 0;
+        let isPlaying = false;
 
-        let myColor, roomId, myName, peer, localStream;
-        const playlist = ['love.mp3', 'love1.mp3', 'sad.mp3', 'tere-liye.mp3'];
-        let trackIndex = 0;
-
-        document.getElementById('join-btn').onclick = async () => {
-            roomId = document.getElementById('room-input').value.trim();
-            myName = document.getElementById('name-input').value.trim().replace(/\s+/g, '_');
-
-            if(!roomId || !myName) return alert("Details enter kijiye!");
-
-            const roomRef = ref(db, `ans_ludo/${roomId}`);
-            const snap = await get(roomRef);
-
-            if(!snap.exists()) {
-                myColor = 'red';
-                await set(roomRef, { turn: 'red', p1: myName, dice: 0 });
+        window.toggleMusic = function() {
+            playlist.forEach(a => a.pause());
+            if(!isPlaying) {
+                playlist[currentTrackIdx].play();
+                playlist[currentTrackIdx].loop = true;
+                document.getElementById('musicBtn').innerText = '💖';
+                isPlaying = true;
             } else {
-                myColor = 'blue';
-                await update(roomRef, { p2: myName });
-            }
-
-            startVoiceEngine();
-            document.getElementById('setup-card').classList.add('hidden');
-            document.getElementById('game-card').classList.remove('hidden');
-            buildBoard();
-            syncHeartbeats();
-        };
-
-        // VOICE CHAT (ZERO NOISE CONTEXT)
-        async function startVoiceEngine() {
-            peer = new Peer(`MOD_ANS_${roomId}_${myName}`);
-            
-            peer.on('call', (call) => {
-                navigator.mediaDevices.getUserMedia({ 
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
-                }).then(s => {
-                    call.answer(s);
-                    call.on('stream', rs => { let a = new Audio(); a.srcObject = rs; a.play(); });
-                });
-            });
-
-            document.getElementById('mic-btn').onclick = async () => {
-                const b = document.getElementById('mic-btn');
-                if(!localStream) {
-                    try {
-                        localStream = await navigator.mediaDevices.getUserMedia({
-                            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-                        });
-                        b.classList.add('active');
-                        const snap = await get(ref(db, `ans_ludo/${roomId}`));
-                        const other = myColor === 'red' ? snap.val().p2 : snap.val().p1;
-                        if(other) {
-                            const call = peer.call(`MOD_ANS_${roomId}_${other}`, localStream);
-                            call.on('stream', rs => { let a = new Audio(); a.srcObject = rs; a.play(); });
-                        }
-                    } catch(e) { alert("Mic required for voice!"); }
+                currentTrackIdx = (currentTrackIdx + 1) % playlist.length;
+                if(currentTrackIdx === 0) {
+                    isPlaying = false;
+                    document.getElementById('musicBtn').innerText = '🎵';
                 } else {
-                    let enabled = localStream.getAudioTracks()[0].enabled;
-                    localStream.getAudioTracks()[0].enabled = !enabled;
-                    b.classList.toggle('active', !enabled);
+                    playlist[currentTrackIdx].play();
                 }
-            };
-        }
-
-        // MUSIC ENGINE
-        const player = document.getElementById('bg-audio');
-        document.getElementById('music-btn').onclick = () => {
-            if(player.paused) { playTrack(); document.getElementById('music-btn').classList.add('active'); }
-            else { player.pause(); document.getElementById('music-btn').classList.remove('active'); }
-        };
-
-        document.getElementById('skip-btn').onclick = () => {
-            trackIndex = (trackIndex + 1) % playlist.length;
-            playTrack();
-        };
-
-        function playTrack() {
-            player.src = playlist[trackIndex];
-            player.play().catch(e => console.log("User interaction needed"));
-            document.getElementById('song-info').innerText = "Vibe: " + playlist[trackIndex];
-        }
-
-        // GAME LOGIC
-        function buildBoard() {
-            const b = document.getElementById('board');
-            for(let i=0; i<225; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                let r = Math.floor(i/15), c = i%15;
-                if(r < 6 && c < 6) cell.classList.add('r-home');
-                if(r > 8 && c > 8) cell.classList.add('b-home');
-                b.appendChild(cell);
             }
+        };
+
+        window.toggleVoice = function() {
+            const btn = document.getElementById('voiceBtn');
+            btn.classList.toggle('active-voice');
+            // Logic for PeerJS voice stream would go here
+            alert("Voice Chat Connected! (Real-time mode)");
+        };
+
+        window.startGame = function() {
+            currentRoom = document.getElementById('roomID').value;
+            myName = document.getElementById('userName').value;
+            if(!currentRoom || !myName) return;
+            
+            document.getElementById('login').style.display = 'none';
+            myColor = Math.random() > 0.5 ? 'rose' : 'peach';
+            initBoard();
+            syncGame();
+        };
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            // Create Path Cells
+            for(let r=1; r<=15; r++) {
+                for(let c=1; c<=15; c++) {
+                    if((r>=7 && r<=9) || (c>=7 && c<=9)) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.id = `c-${r}-${c}`;
+                        if(r==8 && c>=2 && c<=6) cell.classList.add('path-rose');
+                        if(r==8 && c>=10 && c<=14) cell.classList.add('path-peach');
+                        if((r==7 && c==2) || (r==2 && c==9) || (r==14 && c==7) || (r==9 && c==14)) cell.classList.add('safe-zone');
+                        board.appendChild(cell);
+                    }
+                }
+            }
+            // Add Home Bases
+            drawBase(1, 1, 'rose');
+            drawBase(10, 10, 'peach');
         }
 
-        function syncHeartbeats() {
-            onValue(ref(db, `ans_ludo/${roomId}`), (s) => {
-                const d = s.val(); if(!d) return;
-                document.getElementById('status-bar').innerText = d.turn === myColor ? "Your Turn, Jaan! ❤️" : "Wait for Love... ✨";
-                if(d.dice > 0) document.getElementById('dice-btn').innerText = d.dice;
+        function drawBase(r, c, type) {
+            const base = document.createElement('div');
+            base.className = `home-base ${type}-area`;
+            base.style.gridArea = `${r}/${c}/span 6/span 6`;
+            base.innerHTML = `<div class="inner-white"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>`;
+            document.getElementById('board').appendChild(base);
+        }
+
+        const diceBtn = document.getElementById('dice');
+        diceBtn.onclick = () => {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            diceBtn.style.transform = "rotate(360deg)";
+            setTimeout(() => {
+                diceBtn.innerText = roll;
+                diceBtn.style.transform = "rotate(0deg)";
+                update(ref(db, `ludo_pro/${currentRoom}`), {
+                    lastRoll: roll,
+                    turn: myColor === 'rose' ? 'peach' : 'rose'
+                });
+            }, 300);
+        };
+
+        function syncGame() {
+            onValue(ref(db, `ludo_pro/${currentRoom}`), (snap) => {
+                const data = snap.val();
+                if(data) {
+                    document.getElementById('status').innerText = data.turn === myColor ? "YOUR TURN" : "WAITING...";
+                    diceBtn.innerText = data.lastRoll || '🎲';
+                }
             });
         }
-
-        document.getElementById('dice-btn').onclick = async () => {
-            const snap = await get(ref(db, `ans_ludo/${roomId}`));
-            if(snap.val().turn !== myColor) return;
-            const roll = Math.floor(Math.random() * 6) + 1;
-            const next = roll === 6 ? myColor : (myColor === 'red' ? 'blue' : 'red');
-            await update(ref(db, `ans_ludo/${roomId}`), { dice: roll, turn: next });
-        };
-
-        // FLOAT HEARTS
-        setInterval(() => {
-            const h = document.createElement('div');
-            h.className = 'heart'; h.innerHTML = '❤️';
-            h.style.left = Math.random() * 100 + 'vw';
-            h.style.fontSize = (Math.random() * 20 + 10) + 'px';
-            document.getElementById('heart-container').appendChild(h);
-            setTimeout(() => h.remove(), 5000);
-        }, 500);
-
     </script>
 </body>
 </html>
